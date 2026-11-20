@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
+  <title>ІАС обліку вхідних документів</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <h1>ІАС обліку та аналізу вхідних документів</h1>
+      <p class="subtitle">Навчальний проєкт · Тема 1.4 · дані вигадані</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Підсумкові показники -->
+    <section class="kpis" aria-label="Підсумкові показники">
+      <div class="kpi"><span class="kpi-value" id="kpi-total">–</span><span class="kpi-label">Усього документів</span></div>
+      <div class="kpi"><span class="kpi-value" id="kpi-week">–</span><span class="kpi-label">Надійшло за 7 днів</span></div>
+      <div class="kpi"><span class="kpi-value" id="kpi-open">–</span><span class="kpi-label">Не опрацьовано</span></div>
+      <div class="kpi kpi-alert"><span class="kpi-value" id="kpi-urgent">–</span><span class="kpi-label">Високий пріоритет, не опрацьовано</span></div>
+    </section>
+
+    <div class="layout">
+      <!-- Форма реєстрації -->
+      <section class="card" aria-labelledby="form-title">
+        <h2 id="form-title">Реєстрація документа</h2>
+        <form id="doc-form" novalidate>
+          <label>Реєстраційний номер *
+            <input type="text" name="doc_reference" maxlength="255" placeholder="OSINT-24-006" required>
+          </label>
+          <div class="row">
+            <label>Джерело
+              <select name="source_type">
+                <option value="">Не вказано</option>
+                {% for s in source_types %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+              </select>
+            </label>
+            <label>Гриф *
+              <select name="classification" required>
+                {% for c in classifications %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="row">
+            <label>Пріоритет
+              <select name="priority">
+                {% for value, name in priorities.items() %}
+                <option value="{{ value }}" {% if value == 3 %}selected{% endif %}>{{ value }} — {{ name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Дата надходження
+              <input type="datetime-local" name="received_at">
+            </label>
+          </div>
+          <label>Короткий зміст *
+            <textarea name="summary" rows="3" required></textarea>
+          </label>
+          <label>Нотатки аналітика
+            <textarea name="analyst_notes" rows="2"></textarea>
+          </label>
+          <button type="submit" class="btn-primary">Зареєструвати</button>
+          <p id="form-message" class="message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <!-- Аналітика -->
+      <section class="card" aria-labelledby="stats-title">
+        <h2 id="stats-title">Аналітика</h2>
+        <div class="charts">
+          <div><h3>За джерелами</h3><div class="bars" id="chart-source"></div></div>
+          <div><h3>За грифом</h3><div class="bars" id="chart-classification"></div></div>
+          <div><h3>За пріоритетом</h3><div class="bars" id="chart-priority"></div></div>
+          <div><h3>За статусом</h3><div class="bars" id="chart-status"></div></div>
+        </div>
+        <h3>Надходження за останні 14 днів</h3>
+        <div class="timeline" id="chart-day"></div>
+      </section>
+    </div>
+
+    <!-- Реєстр документів -->
+    <section class="card" aria-labelledby="table-title">
+      <div class="table-head">
+        <h2 id="table-title">Реєстр документів <span id="row-count" class="muted"></span></h2>
+        <div class="filters">
+          <input type="search" id="filter-text" placeholder="Пошук за будь-яким полем…" aria-label="Пошук">
+          <select id="filter-source" aria-label="Фільтр за джерелом">
+            <option value="">Усі джерела</option>
+            {% for s in source_types %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+          <select id="filter-status" aria-label="Фільтр за статусом">
+            <option value="">Усі статуси</option>
+            {% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <p id="list-message" class="message" role="status" aria-live="polite"></p>
+      <div class="table-scroll">
+        <table id="docs-table">
+          <thead>
+            <tr>
+              <th data-column="doc_reference">Номер</th>
+              <th data-column="received_at">Надійшов</th>
+              <th data-column="source_type">Джерело</th>
+              <th data-column="classification">Гриф</th>
+              <th data-column="summary">Зміст</th>
+              <th data-column="priority">Пріоритет</th>
+              <th data-column="status">Статус</th>
+              <th>Дії</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Статуси передаються в JavaScript з бекенду, щоб не дублювати списки -->
+  <script id="statuses-data" type="application/json">{{ statuses | tojson }}</script>
+</body>
+</html>
